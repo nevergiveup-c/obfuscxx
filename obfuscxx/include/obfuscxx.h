@@ -1,4 +1,9 @@
 #pragma once
+
+// MIT License
+// Copyright (c) 2025 Alexander (nevergiveup-c)
+// https://github.com/nevergiveup-c/obfuscxx
+
 #include <cstdint>
 #include <initializer_list>
 #include <type_traits>
