@@ -18,7 +18,7 @@ The screenshots show only a small portion of the int main() function. In reality
   <p><em>MSVC, LLVM, GCC compilation (int main()) (Level: Low)</em></p>
 </div>
 
-## Performance Impact
+## Performance Impact:
 
 ### Runtime Performance:
 Benchmark results (1M iterations):
