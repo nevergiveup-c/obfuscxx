@@ -3,7 +3,9 @@
 #include <initializer_list>
 #include <type_traits>
 
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(__ARM_NEON)
+#include <arm_neon.h>
+#elif defined(__clang__) || defined(__GNUC__)
 #include <immintrin.h>
 #elif defined(_MSC_VER)
 #include <intrin.h>
@@ -11,26 +13,50 @@
 #include <immintrin.h>
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) || defined(__GNUC__)
 #define VOLATILE __attribute__((used))
 #elif defined(_MSC_VER)
 #define VOLATILE volatile
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
-#define FORCEINLINE inline __attribute__((always_inline))
+#define FORCEINLINE __attribute__((always_inline)) inline
 #else
 #define FORCEINLINE __forceinline
 #endif
 
 #if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
-#define _mm256_extract_epi64(vec, idx) _mm_cvtsi128_si64(_mm256_castsi256_si128(vec))
+#define _mm256_extract_epi32(vec, idx) (((int32_t*)&(vec))[(idx)])
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+#define MEM_BARRIER(...) __asm__ volatile("" : "+r"(__VA_ARGS__) :: "memory");
+#elif defined(_MSC_VER)
+#define MEM_BARRIER(...) _ReadWriteBarrier();
+#endif
+
+constexpr uint64_t splitmix64(uint64_t x) {
+	x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+	x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+	return x ^ (x >> 31);
+}
+
 #if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
-#define OBFUSCXX_ENTROPY (((uint64_t)(HASH(__FILE__) * __LINE__) ^ (0xDEADBEAFULL * __LINE__)) * (uint64_t)((__COUNTER__ << 16)) & 0x7FFFFFFFFFFFFFFFULL)
+#define OBFUSCXX_ENTROPY ( \
+    splitmix64( \
+        (HASH(__FILE__) * 0x517cc1b727220a95ULL) + \
+        ((uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
+        (rol64((uint64_t)__COUNTER__, 37) ^ ((uint64_t)__LINE__ * 0xff51afd7ed558ccdULL)) \
+    ) \
+)
 #else
-#define OBFUSCXX_ENTROPY (((uint64_t)(HASH(__FILE__) * __LINE__) ^ (HASH(__TIME__) * __LINE__)) * (uint64_t)((__COUNTER__ << 16)) & 0x7FFFFFFFFFFFFFFFULL)
+#define OBFUSCXX_ENTROPY ( \
+    splitmix64( \
+        HASH(__FILE__) + \
+        ((uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
+        (HASH(__TIME__) ^ ((uint64_t)__COUNTER__ << 32)) \
+    ) \
+)
 #endif
 
 template<size_t N> FORCEINLINE consteval uint64_t hash_compile_time(char const (&data)[N])
@@ -79,137 +105,191 @@ FORCEINLINE uint64_t hash_runtime(char const* str)
 constexpr uint64_t rol64(uint64_t x, int n)
 {
 	n &= 63;
+	if (n == 0) return x;
 	return (x << n) | (x >> (64 - n));
 }
 
 constexpr uint64_t ror64(uint64_t x, int n)
 {
 	n &= 63;
+	if (n == 0) return x;
 	return (x >> n) | (x << (64 - n));
 }
 
-FORCEINLINE uint64_t ror64_avx(uint64_t v, int count)
-{
-	__m128i xmm_val = _mm_set1_epi64x(v);
-	__m128i shifted_r = _mm_srli_epi64(xmm_val, count);
-	__m128i shifted_l = _mm_slli_epi64(xmm_val, 64 - count);
-	__m128i result = _mm_or_si128(shifted_r, shifted_l);
-	return _mm_cvtsi128_si64(result);
-}
-
-FORCEINLINE uint64_t rol64_avx(uint64_t v, int count)
-{
-	__m128i xmm_val = _mm_set1_epi64x(v);
-	__m128i shifted_l = _mm_slli_epi64(xmm_val, count);
-	__m128i shifted_r = _mm_srli_epi64(xmm_val, 64 - count);
-	__m128i result = _mm_or_si128(shifted_l, shifted_r);
-	return _mm_cvtsi128_si64(result);
-}
-
-enum class obf_level : uint8_t { Low, High };
-template <class Type, size_t Size = 1, obf_level Level = obf_level::High, uint64_t Entropy = OBFUSCXX_ENTROPY>
+enum class obf_level : uint8_t { Low, Medium, High };
+template <class Type, size_t Size = 1, obf_level Level = obf_level::Low, uint64_t Entropy = OBFUSCXX_ENTROPY>
 class obfuscxx
 {
-	static constexpr bool single = Size == 1;
-	static constexpr bool single_pointer = std::is_pointer_v<Type> && Size == 1;
-	static constexpr bool array = Size > 1;
+	static constexpr bool is_single = Size == 1;
+	static constexpr bool is_single_pointer = std::is_pointer_v<Type> && Size == 1;
+	static constexpr bool is_char = std::is_same_v<Type, char> || std::is_same_v<Type, const char>;
+	static constexpr bool is_array = Size > 1;
 
 	static constexpr uint64_t seed{ Entropy };
 	static constexpr uint64_t iv[8] = {
-		0xcbf43b227a01fe5a ^ rol64(seed, 4),
-		0x32703be7aaa7c38f ^ rol64(seed, 8),
-		0xb589959b3d854bbc ^ ror64(seed, 16),
-		0x73b3ef5578a97c8a ^ ror64(seed, 24),
-		0x92afafd27c6e16e9 ^ rol64(seed, 32),
-		0xee8291ae3070720a ^ rol64(seed, 40),
-		0xe2c0d70f73d6c4a0 ^ ror64(seed, 48),
-		0x82742897b912855b ^ rol64(seed, 56),
+		0xcbf43b227a01fe5aULL ^ seed,
+		0x32703be7aaa7c38fULL ^ ror64(seed, 13),
+		0xb589959b3d854bbcULL ^ rol64(seed, 29),
+		0x73b3ef5578a97c8aULL ^ ror64(seed, 41),
+		0x92afafd27c6e16e9ULL ^ rol64(seed, 7),
+		0xee8291ae3070720aULL ^ ror64(seed, 53),
+		0xe2c0d70f73d6c4a0ULL ^ rol64(seed, 19),
+		0x82742897b912855bULL ^ ror64(seed, 37),
 	};
+	static constexpr uint64_t iv_size = (sizeof(iv) / 8) - 1;
+	static constexpr uint64_t unique_index = seed & iv_size;
+	static constexpr uint64_t unique_value = iv[unique_index];
+
+	static constexpr uint32_t xtea_rounds =
+		(Level == obf_level::Low) ? 2 :
+		(Level == obf_level::Medium) ? 6 :
+		(6 + ((unique_index & 0x7) * 2));
+
+	static constexpr uint32_t xtea_delta = (0x9E3779B9 ^ static_cast<uint32_t>(unique_value)) | 1;
 
 	static constexpr uint64_t encrypt(Type value)
 	{
 		uint64_t val = to_uint64(value);
 
-		if constexpr (Level == obf_level::Low)
-		{
-			return rol64(val ^ iv[0], (iv[7] & 0xF));
+		uint32_t v0 = static_cast<uint32_t>(val);
+		uint32_t v1 = static_cast<uint32_t>(val >> 32);
+		uint32_t sum = 0;
+
+		for (uint32_t i = 0; i < xtea_rounds; ++i) {
+			v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^
+				(sum + static_cast<uint32_t>(iv[sum & 3]));
+			sum += xtea_delta;
+			v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^
+				(sum + static_cast<uint32_t>(iv[(sum >> 11) & 3]));
 		}
 
-		val = rol64(val, (iv[1] & 0xF));
-		val = ror64(val, (iv[4] & 0xF));
-
-		for (const uint64_t key : iv) {
-			val = rol64(val, (iv[2] & 0xF));
-			val ^= key;
-			val = ror64(val, (iv[5] & 0xF));
-		}
-
-		val = ror64(val, (iv[3] & 0xF));
-		val = rol64(val, (iv[2] & 0xF));
-
-		return val;
+		return (static_cast<uint64_t>(v1) << 32) | v0;
 	}
 
-	static FORCEINLINE Type decrypt(uint64_t val)
+	static FORCEINLINE Type decrypt(uint64_t value)
 	{
-#if defined(__GNUC__) || defined(__clang__)
-		__asm__ volatile("" : "+r"(val) :: "memory");
-#elif defined(_MSC_VER)
-		_ReadWriteBarrier();
-#endif
+		MEM_BARRIER(value)
 
-		if constexpr (Level == obf_level::Low)
-		{
-			return from_uint64(ror64_avx(val, (iv[7] & 0xF)) ^ iv[0]);
+		uint32_t v0 = static_cast<uint32_t>(value);
+		uint32_t v1 = static_cast<uint32_t>(value >> 32);
+		uint32_t sum = xtea_delta * xtea_rounds;
+
+#if defined(__aarch64__) || defined(_M_ARM64)
+		// ARM64 - NEON
+		for (uint32_t i = 0; i < xtea_rounds; ++i) {
+			MEM_BARRIER(v0, v1, sum)
+
+			// v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key)
+			uint32x4_t neon_v0 = vdupq_n_u32(v0);
+			uint32x4_t neon_left = vshlq_n_u32(neon_v0, 4);
+			uint32x4_t neon_right = vshrq_n_u32(neon_v0, 5);
+			uint32x4_t neon_temp = veorq_u32(neon_left, neon_right);
+			neon_temp = vaddq_u32(neon_temp, neon_v0);
+
+			uint32x4_t neon_key = vdupq_n_u32(sum + static_cast<uint32_t>(iv[(sum >> 11) & 3]));
+			neon_temp = veorq_u32(neon_temp, neon_key);
+
+			uint32x4_t neon_v1 = vdupq_n_u32(v1);
+			neon_v1 = vsubq_u32(neon_v1, neon_temp);
+			v1 = vgetq_lane_u32(neon_v1, 0);
+
+			sum -= xtea_delta;
+
+			MEM_BARRIER(v0, v1, sum)
+
+			// v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key)
+			neon_v1 = vdupq_n_u32(v1);
+			neon_left = vshlq_n_u32(neon_v1, 4);
+			neon_right = vshrq_n_u32(neon_v1, 5);
+			neon_temp = veorq_u32(neon_left, neon_right);
+			neon_temp = vaddq_u32(neon_temp, neon_v1);
+
+			neon_key = vdupq_n_u32(sum + static_cast<uint32_t>(iv[sum & 3]));
+			neon_temp = veorq_u32(neon_temp, neon_key);
+
+			neon_v0 = vdupq_n_u32(v0);
+			neon_v0 = vsubq_u32(neon_v0, neon_temp);
+			v0 = vgetq_lane_u32(neon_v0, 0);
 		}
-#if defined(__clang__) || defined(__GNUC__)
-		val = ror64_avx(val, (iv[2] & 0xF));
-		val = rol64_avx(val, (iv[3] & 0xF));
 
-		for (int i = 8; i >= 1; --i) {
-			val = rol64_avx(val, (iv[5] & 0xF));
+#elif defined(__clang__) || defined(__GNUC__)
+		// x86/x64 GCC/Clang - SSE2
+		for (uint32_t i = 0; i < xtea_rounds; ++i) {
+			MEM_BARRIER(v0, v1, sum)
 
-			__m128i xmm_val = _mm_set_epi64x(0, val);
-			__m128i xmm_key = _mm_set_epi64x(0, iv[i - 1]);
-			xmm_val = _mm_xor_si128(xmm_val, xmm_key);
-			val = _mm_cvtsi128_si64(xmm_val);
+			// v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key)
+			__m128i xmm_v0 = _mm_cvtsi32_si128(v0);
+			__m128i xmm_left = _mm_slli_epi32(xmm_v0, 4);
+			__m128i xmm_right = _mm_srli_epi32(xmm_v0, 5);
+			__m128i xmm_temp = _mm_xor_si128(xmm_left, xmm_right);
+			xmm_temp = _mm_add_epi32(xmm_temp, xmm_v0);
 
-			val = ror64_avx(val, (iv[2] & 0xF));
+			__m128i xmm_key = _mm_cvtsi32_si128(sum + static_cast<uint32_t>(iv[(sum >> 11) & 3]));
+			xmm_temp = _mm_xor_si128(xmm_temp, xmm_key);
+
+			__m128i xmm_v1 = _mm_cvtsi32_si128(v1);
+			xmm_v1 = _mm_sub_epi32(xmm_v1, xmm_temp);
+			v1 = _mm_cvtsi128_si32(xmm_v1);
+
+			sum -= xtea_delta;
+
+			MEM_BARRIER(v0, v1, sum)
+
+			// v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key)
+			xmm_v1 = _mm_cvtsi32_si128(v1);
+			xmm_left = _mm_slli_epi32(xmm_v1, 4);
+			xmm_right = _mm_srli_epi32(xmm_v1, 5);
+			xmm_temp = _mm_xor_si128(xmm_left, xmm_right);
+			xmm_temp = _mm_add_epi32(xmm_temp, xmm_v1);
+
+			xmm_key = _mm_cvtsi32_si128(sum + static_cast<uint32_t>(iv[sum & 3]));
+			xmm_temp = _mm_xor_si128(xmm_temp, xmm_key);
+
+			xmm_v0 = _mm_cvtsi32_si128(v0);
+			xmm_v0 = _mm_sub_epi32(xmm_v0, xmm_temp);
+			v0 = _mm_cvtsi128_si32(xmm_v0);
 		}
 
-		val = rol64_avx(val, (iv[4] & 0xF));
-		val = ror64_avx(val, (iv[1] & 0xF));
-
-		return from_uint64(val);
 #else
-		__m256i mm256 = _mm256_set1_epi64x(val);
+		// MSVC x86/x64 - AVX2
+		for (uint32_t i = 0; i < xtea_rounds; ++i) {
+			MEM_BARRIER(v0, v1, sum)
 
-		mm256 = _mm256_ror_epi64(mm256, (iv[2] & 0xF));
-		mm256 = _mm256_rol_epi64(mm256, (iv[3] & 0xF));
-		val = _mm256_extract_epi64(mm256, 0);
+			// v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key)
+			__m256i mm256_v0 = _mm256_set1_epi32(v0);
+			__m256i mm256_left = _mm256_slli_epi32(mm256_v0, 4);
+			__m256i mm256_right = _mm256_srli_epi32(mm256_v0, 5);
+			__m256i mm256_temp = _mm256_xor_si256(mm256_left, mm256_right);
+			mm256_temp = _mm256_add_epi32(mm256_temp, mm256_v0);
 
-		for (int i = 8; i >= 1; --i) {
-			mm256 = _mm256_set1_epi64x(val);
-			mm256 = _mm256_rol_epi64(mm256, (iv[5] & 0xF));
-			val = _mm256_extract_epi64(mm256, 0);
+			__m256i mm256_key = _mm256_set1_epi32(sum + static_cast<uint32_t>(iv[(sum >> 11) & 3]));
+			mm256_temp = _mm256_xor_si256(mm256_temp, mm256_key);
 
-			__m128i xmm_val = _mm_set_epi64x(0, val);
-			__m128i xmm_key = _mm_set_epi64x(0, iv[i - 1]);
-			xmm_val = _mm_xor_si128(xmm_val, xmm_key);
-			val = _mm_cvtsi128_si64(xmm_val);
+			__m256i mm256_v1 = _mm256_set1_epi32(v1);
+			mm256_v1 = _mm256_sub_epi32(mm256_v1, mm256_temp);
+			v1 = _mm256_extract_epi32(mm256_v1, 0);
 
-			mm256 = _mm256_set1_epi64x(val);
-			mm256 = _mm256_ror_epi64(mm256, (iv[2] & 0xF));
-			val = _mm256_extract_epi64(mm256, 0);
+			sum -= xtea_delta;
 
+			MEM_BARRIER(v0, v1, sum)
+
+			// v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key)
+			mm256_v1 = _mm256_set1_epi32(v1);
+			mm256_left = _mm256_slli_epi32(mm256_v1, 4);
+			mm256_right = _mm256_srli_epi32(mm256_v1, 5);
+			mm256_temp = _mm256_xor_si256(mm256_left, mm256_right);
+			mm256_temp = _mm256_add_epi32(mm256_temp, mm256_v1);
+
+			mm256_key = _mm256_set1_epi32(sum + static_cast<uint32_t>(iv[sum & 3]));
+			mm256_temp = _mm256_xor_si256(mm256_temp, mm256_key);
+
+			mm256_v0 = _mm256_set1_epi32(v0);
+			mm256_v0 = _mm256_sub_epi32(mm256_v0, mm256_temp);
+			v0 = _mm256_extract_epi32(mm256_v0, 0);
 		}
-
-		mm256 = _mm256_set1_epi64x(val);
-		mm256 = _mm256_rol_epi64(mm256, (iv[4] & 0xF));
-		mm256 = _mm256_ror_epi64(mm256, (iv[1] & 0xF));
-
-		return from_uint64(_mm256_extract_epi64(mm256, 0));
 #endif
+
+		return from_uint64((static_cast<uint64_t>(v1) << 32) | v0);
 	}
 
 	static constexpr uint64_t to_uint64(Type value)
@@ -229,7 +309,6 @@ class obfuscxx
 			return static_cast<uint64_t>(value);
 		}
 	}
-
 	static FORCEINLINE Type from_uint64(uint64_t value)
 	{
 		if constexpr (std::is_pointer_v<Type>) {
@@ -255,11 +334,8 @@ public:
 	}
 	explicit consteval obfuscxx(const std::initializer_list<Type>& list)
 	{
-		for (size_t i{}; const auto& val : list) {
-			if (i < Size) {
-				data[i++] = encrypt(val);
-			}
-		}
+		for (size_t i{}; const auto& v : list)
+			data[i++] = encrypt(v);
 	}
 	explicit consteval obfuscxx(Type(&val)[Size])
 	{
@@ -267,21 +343,27 @@ public:
 			data[i] = encrypt(val[i]);
 		}
 	}
+	explicit consteval obfuscxx(const Type(&val)[Size])
+	{
+		for (size_t i{}; i < Size; ++i) {
+			data[i] = encrypt(val[i]);
+		}
+	}
 
-	FORCEINLINE Type get() const requires single
+	FORCEINLINE Type get() const requires is_single
 	{
 		volatile const uint64_t* ptr = &data[0];
 		uint64_t val = *ptr;
 		return decrypt(val);
 	}
-	FORCEINLINE Type get(size_t i) const requires array
+	FORCEINLINE Type get(size_t i) const requires is_array
 	{
 		volatile const uint64_t* ptr = &data[i];
 		uint64_t val = *ptr;
 		return decrypt(val);
 	}
 
-	FORCEINLINE void copy_to(Type* out, size_t count) const requires array
+	FORCEINLINE void copy_to(Type* out, size_t count) const requires is_array
 	{
 		size_t n = (count < Size) ? count : Size;
 		for (size_t i = 0; i < n; ++i) {
@@ -290,15 +372,15 @@ public:
 		}
 	}
 
-	FORCEINLINE void set(Type val) requires single
+	FORCEINLINE void set(Type val) requires is_single
 	{
 		data[0] = encrypt(val);
 	}
-	FORCEINLINE void set(Type val, size_t i) requires array
+	FORCEINLINE void set(Type val, size_t i) requires is_array
 	{
 		data[i] = encrypt(val);
 	}
-	FORCEINLINE void set(const std::initializer_list<Type>& list) requires array
+	FORCEINLINE void set(const std::initializer_list<Type>& list) requires is_array
 	{
 		for (size_t i{}; const auto& val : list) {
 			if (i < Size) {
@@ -307,31 +389,31 @@ public:
 		}
 	}
 
-	FORCEINLINE Type operator()() const requires single
+	FORCEINLINE Type operator()() const requires is_single
 	{
 		return decrypt(data[0]);
 	}
-	FORCEINLINE Type operator[](size_t i) const requires array
+	FORCEINLINE Type operator[](size_t i) const requires is_array
 	{
 		return decrypt(data[i]);
 	}
 
-	FORCEINLINE obfuscxx& operator=(Type val) requires single
+	FORCEINLINE obfuscxx& operator=(Type val) requires is_single
 	{
 		set(val);
 		return *this;
 	}
-	FORCEINLINE obfuscxx& operator=(const std::initializer_list<Type>& list) requires array
+	FORCEINLINE obfuscxx& operator=(const std::initializer_list<Type>& list) requires is_array
 	{
 		set(list);
 		return *this;
 	}
 
-	FORCEINLINE bool operator==(const obfuscxx& rhs) const requires single
+	FORCEINLINE bool operator==(const obfuscxx& rhs) const requires is_single
 	{
 		return get() == rhs.get();
 	}
-	FORCEINLINE bool operator==(const obfuscxx& rhs) const requires array
+	FORCEINLINE bool operator==(const obfuscxx& rhs) const requires is_array
 	{
 		for (size_t i = 0; i < Size; ++i) {
 			if (get(i) != rhs.get(i)) {
@@ -345,42 +427,42 @@ public:
 		return !(*this == rhs);
 	}
 
-	FORCEINLINE operator Type() const requires single
+	FORCEINLINE operator Type() const requires is_single
 	{
 		return get();
 	}
 
-	FORCEINLINE bool operator<(const obfuscxx& rhs) const requires (!single_pointer)
+	FORCEINLINE bool operator<(const obfuscxx& rhs) const requires (!is_single_pointer)
 	{
 		return get() < rhs.get();
 	}
-	FORCEINLINE bool operator>(const obfuscxx& rhs) const requires (!single_pointer)
+	FORCEINLINE bool operator>(const obfuscxx& rhs) const requires (!is_single_pointer)
 	{
 		return get() > rhs.get();
 	}
-	FORCEINLINE bool operator<=(const obfuscxx& rhs) const requires (!single_pointer)
+	FORCEINLINE bool operator<=(const obfuscxx& rhs) const requires (!is_single_pointer)
 	{
 		return get() <= rhs.get();
 	}
-	FORCEINLINE bool operator>=(const obfuscxx& rhs) const requires (!single_pointer)
+	FORCEINLINE bool operator>=(const obfuscxx& rhs) const requires (!is_single_pointer)
 	{
 		return get() >= rhs.get();
 	}
 
-	FORCEINLINE obfuscxx operator+(const obfuscxx& rhs) const requires (!single_pointer)
+	FORCEINLINE obfuscxx operator+(const obfuscxx& rhs) const requires (!is_single_pointer)
 	{
 		return obfuscxx(get() + rhs.get());
 	}
-	FORCEINLINE obfuscxx operator-(const obfuscxx& rhs) const requires (!single_pointer)
+	FORCEINLINE obfuscxx operator-(const obfuscxx& rhs) const requires (!is_single_pointer)
 	{
 		return obfuscxx(get() - rhs.get());
 	}
-	FORCEINLINE obfuscxx& operator+=(const obfuscxx& rhs) requires (!single_pointer)
+	FORCEINLINE obfuscxx& operator+=(const obfuscxx& rhs) requires (!is_single_pointer)
 	{
 		set(get() + rhs.get());
 		return *this;
 	}
-	FORCEINLINE obfuscxx& operator-=(const obfuscxx& rhs) requires (!single_pointer)
+	FORCEINLINE obfuscxx& operator-=(const obfuscxx& rhs) requires (!is_single_pointer)
 	{
 		set(get() - rhs.get());
 		return *this;
@@ -396,9 +478,23 @@ public:
 		bool operator==(const iterator& other) const { return index == other.index; }
 	};
 
-	iterator begin() const requires array { return { this, 0 }; }
-	iterator end() const requires array { return { this, Size }; }
+	iterator begin() const requires is_array { return { this, 0 }; }
+	iterator end() const requires is_array { return { this, Size }; }
 	static constexpr size_t size() { return Size; }
+
+	template<size_t N>
+	struct string_copy {
+		char data[N];
+		operator const char* () const { return data; }
+		const char* c_str() const { return data; }
+	};
+
+	FORCEINLINE string_copy<Size> to_string() const requires is_char
+	{
+		string_copy<Size> result{};
+		copy_to(result.data, Size);
+		return result;
+	}
 
 private:
 	VOLATILE uint64_t data[Size]{};
