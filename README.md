@@ -12,9 +12,9 @@ By selecting different encryption levels (Low, Medium, High), you can control th
 The screenshots show only a small portion of the int main() function. In reality, the function can grow to around 250 lines depending on the compiler.
 
 <div align="center">
-  <img src="images/msvc.png" width="49%"/>
-  <img src="images/llvm.png" width="49%"/>
-  <img src="images/gcc.png" width="49%"/>
+  <img src="images/msvc.png" width="49%" height="300px" style="object-fit: cover;"/>
+  <img src="images/llvm.png" width="49%" height="300px" style="object-fit: cover;"/>
+  <img src="images/gcc.png" width="49%" height="300px" style="object-fit: cover;"/>
   <p><em>MSVC, LLVM, GCC compilation (int main()) (Level: Low)</em></p>
 </div>
 
