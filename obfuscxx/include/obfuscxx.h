@@ -6,6 +6,10 @@
 
 #include <cstdint>
 #include <initializer_list>
+
+using byte = uint8_t;
+using max_align_t = double;
+
 #include <type_traits>
 
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(__ARM_NEON)
