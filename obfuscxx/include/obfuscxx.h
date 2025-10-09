@@ -477,6 +477,11 @@ public:
 		return *this;
 	}
 
+	FORCEINLINE Type operator->() requires is_single_pointer
+	{
+		return get();
+	}
+
 	struct iterator {
 		const obfuscxx* parent;
 		size_t index;

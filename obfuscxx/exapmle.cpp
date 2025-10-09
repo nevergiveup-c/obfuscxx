@@ -25,4 +25,10 @@ int main()
     pointer = new int{101};
     std::cout << pointer.get() << " " << *pointer.get() << '\n';
     delete pointer.get();
+
+    obfuscxx<std::string*> pointer1{};
+    pointer1 = new std::string{"str2"};
+    std::cout << pointer1->data() << '\n';
+
+    delete pointer1.get();
 }
