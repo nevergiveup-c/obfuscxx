@@ -132,6 +132,7 @@ class obfuscxx
 	static constexpr bool is_single = Size == 1;
 	static constexpr bool is_single_pointer = std::is_pointer_v<Type> && Size == 1;
 	static constexpr bool is_char = std::is_same_v<Type, char> || std::is_same_v<Type, const char>;
+	static constexpr bool is_wchar = std::is_same_v<Type, wchar_t> || std::is_same_v<Type, const wchar_t>;
 	static constexpr bool is_array = Size > 1;
 
 	static constexpr uint64_t seed{ Entropy };
@@ -501,16 +502,22 @@ public:
 	iterator end() const requires is_array { return { this, Size }; }
 	static constexpr size_t size() { return Size; }
 
-	template<size_t N>
-	struct string_copy {
-		char data[N];
-		operator const char* () const { return data; }
-		const char* c_str() const { return data; }
+	template<class CharType, size_t N> struct string_copy {
+		CharType data[N];
+
+		static constexpr bool is_char = std::is_same_v<CharType, char> ||
+			std::is_same_v<CharType, const char>;
+		static constexpr bool is_wchar = std::is_same_v<CharType, wchar_t> ||
+			std::is_same_v<CharType, const wchar_t>;
+
+		operator const char* () const requires is_char { return data; }
+		operator const wchar_t* () const requires is_wchar { return data; }
+		const CharType* c_str() const { return data; }
 	};
 
-	FORCEINLINE string_copy<Size> to_string() const requires is_char
+	FORCEINLINE string_copy<Type, Size> to_string() const requires (is_char || is_wchar)
 	{
-		string_copy<Size> result{};
+		string_copy<Type, Size> result{};
 		copy_to(result.data, Size);
 		return result;
 	}

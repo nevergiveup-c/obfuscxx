@@ -19,7 +19,9 @@ int main()
     std::cout << '\n';
 
 	obfuscxx str("str");
+    obfuscxx wstr(L"wstr");
     std::cout << str.to_string() << '\n';
+    std::wcout << wstr.to_string().c_str() << '\n';
 
     obfuscxx<int*> pointer{};
     pointer = new int{101};
