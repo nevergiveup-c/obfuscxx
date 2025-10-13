@@ -23,24 +23,50 @@ The screenshots show only a small portion of the int main() function. In reality
 ## Performance Impact:
 
 ### Runtime Performance:
-Benchmark results (1M iterations):
 
-| Compiler | Normal           | Obfuscated       | Overhead      |
-|:---------|:-----------------|:-----------------|:--------------|
-| **MSVC** | 347 μs           | 4,437 μs         | +4,090 μs (**~12.8x**) |
-| **LLVM** | 174 μs           | 3,613 μs         | +3,439 μs (**~20.8x**) |
-| **GCC**  | 97 μs            | 2,911 μs         | +2,814 μs (**~30.0x**) |
+#### Integer Operations:
+| Compiler | Low              | Medium           | High             |
+|:---------|:-----------------|:-----------------|:-----------------|
+| **MSVC** | 3.62 ns          | 10.7 ns (3.0x)   | 48.3 ns (13.3x)  |
+| **LLVM** | 3.31 ns          | 10.3 ns (3.1x)   | 41.0 ns (12.4x)  |
+| **GCC**  | 4.65 ns          | 17.2 ns (3.7x)   | 56.1 ns (12.1x)  |
 
-**Per-decryption cost:** ~3-4 nanoseconds
+#### Float Operations:
+| Compiler | Low              | Medium           | High             |
+|:---------|:-----------------|:-----------------|:-----------------|
+| **MSVC** | 3.40 ns          | 10.8 ns (3.2x)   | 46.7 ns (13.7x)  |
+| **LLVM** | 3.26 ns          | 10.9 ns (3.3x)   | 42.0 ns (12.9x)  |
+| **GCC**  | 4.22 ns          | 16.5 ns (3.9x)   | 56.9 ns (13.5x)  |
 
-### Encryption Levels Comparison:
-Benchmark results (100K iterations):
+#### String Operations:
+| Compiler | Low              | Medium           | High             |
+|:---------|:-----------------|:-----------------|:-----------------|
+| **MSVC** | 36.8 ns          | 116 ns (3.2x)    | 495 ns (13.5x)   |
+| **LLVM** | 31.9 ns          | 104 ns (3.3x)    | 429 ns (13.4x)   |
+| **GCC**  | 43.0 ns          | 174 ns (4.0x)    | 538 ns (12.5x)   |
 
-| Compiler | Low              | Medium           | High          |
-|:---------|:-----------------|:-----------------|:--------------|
-| **MSVC** | 428 μs           | 2,228 μs (5.2x)  | 4,065 μs (9.5x) |
-| **LLVM** | 285 μs           | 1,089 μs (3.8x)  | 2,858 μs (10.0x) |
-| **GCC**  | 363 μs           | 1,126 μs (3.1x)  | 2,347 μs (6.5x) |
+#### Wide String Operations:
+| Compiler | Low              | Medium           | High             |
+|:---------|:-----------------|:-----------------|:-----------------|
+| **MSVC** | 31.8 ns          | 112 ns (3.5x)    | 503 ns (15.8x)   |
+| **LLVM** | 31.4 ns          | 106 ns (3.4x)    | 417 ns (13.3x)   |
+| **GCC**  | 47.5 ns          | 172 ns (3.6x)    | 547 ns (11.5x)   |
+
+#### Array Operations:
+**Iteration (100 elements):**
+| Compiler | Low              | Medium           | High             |
+|:---------|:-----------------|:-----------------|:-----------------|
+| **MSVC** | 401 ns           | 1,136 ns (2.8x)  | 5,114 ns (12.8x) |
+| **LLVM** | 344 ns           | 1,079 ns (3.1x)  | 4,284 ns (12.5x) |
+| **GCC**  | 436 ns           | 1,795 ns (4.1x)  | 5,416 ns (12.4x) |
+
+**Element Access:**
+| Compiler | Low              | Medium           | High             |
+|:---------|:-----------------|:-----------------|:-----------------|
+| **MSVC** | 3.32 ns          | 11.3 ns (3.4x)   | 49.8 ns (15.0x)  |
+| **LLVM** | 3.21 ns          | 10.2 ns (3.2x)   | 41.6 ns (13.0x)  |
+| **GCC**  | 4.38 ns          | 17.5 ns (4.0x)   | 56.3 ns (12.9x)  |
+
 
 ### Binary Size Overhead:
 | Compiler | Without obfuscxx | With obfuscxx    | Overhead      |
@@ -48,6 +74,12 @@ Benchmark results (100K iterations):
 | **MSVC** | 17.0 KB          | 18.0 KB          | +1,024 bytes (**+5.9%**) |
 | **LLVM** | 17.5 KB          | 19.6 KB          | +1,560 bytes (**+8.7%**) |
 | **GCC**  | 47.8 KB          | 52.2 KB          | +4,491 bytes (**+9.2%**) |
+
+## Compilation of quick tests:
+1. Install `vcpkg`
+2. Add `VCPKG_ROOT` environment variable
+3. Configure: `cmake --preset <compiler>` (msvc/llvm/gcc)
+4. Build: `cmake --build --preset <compiler>` (--config Release/Debug)
 
 ## Installation:
 Just add the header file to your project - `#include "include/obfuscxx.h"`
@@ -81,6 +113,11 @@ int main()
     delete pointer.get();
 }
 ```
+## Requirements:
+- C++20 or later
+- Compiler with SIMD support (AVX/SSE/NEON)
+- CMake 3.15+ (for building tests)
+- vcpkg (for dependencies)
 
 ## Compiler Support:
 - `MSVC (+wdm)`
