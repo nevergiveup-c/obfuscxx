@@ -67,19 +67,12 @@ The screenshots show only a small portion of the int main() function. In reality
 | **LLVM** | 3.21 ns          | 10.2 ns (3.2x)   | 41.6 ns (13.0x)  |
 | **GCC**  | 4.38 ns          | 17.5 ns (4.0x)   | 56.3 ns (12.9x)  |
 
-
 ### Binary Size Overhead:
 | Compiler | Without obfuscxx | With obfuscxx    | Overhead      |
 |:---------|:-----------------|:-----------------|:--------------|
 | **MSVC** | 17.0 KB          | 18.0 KB          | +1,024 bytes (**+5.9%**) |
 | **LLVM** | 17.5 KB          | 19.6 KB          | +1,560 bytes (**+8.7%**) |
 | **GCC**  | 47.8 KB          | 52.2 KB          | +4,491 bytes (**+9.2%**) |
-
-## Compilation of quick tests:
-1. Install `vcpkg`
-2. Add `VCPKG_ROOT` environment variable
-3. Configure: `cmake --preset <compiler>` (msvc/llvm/gcc)
-4. Build: `cmake --build --preset <compiler>` (--config Release/Debug)
 
 ## Installation:
 Just add the header file to your project - `#include "include/obfuscxx.h"`
@@ -113,6 +106,12 @@ int main()
     delete pointer.get();
 }
 ```
+## Building Tests and Benchmarks:
+1. Install `vcpkg`
+2. Add `VCPKG_ROOT` environment variable
+3. Configure: `cmake --preset <compiler>` (msvc/llvm/gcc)
+4. Build: `cmake --build --preset <compiler>` (--config Release/Debug)
+
 ## Requirements:
 - C++20 or later
 - Compiler with SIMD support (AVX/SSE/NEON)
