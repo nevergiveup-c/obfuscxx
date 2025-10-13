@@ -4,6 +4,8 @@ Debug/
 Release/
 x64/
 x86/
+build/
+.idea/
 
 *.o
 *.obj
@@ -14,6 +16,5 @@ x86/
 *.log
 *.tlog
 *.user
-
-build/
-out/
+*.iml
+*.xml
