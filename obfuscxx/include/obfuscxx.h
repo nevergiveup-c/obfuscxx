@@ -442,31 +442,40 @@ public:
 		return get();
 	}
 
-	FORCEINLINE bool operator<(const obfuscxx& rhs) const requires (!is_single_pointer)
+	FORCEINLINE bool operator<(const obfuscxx& rhs) const
 	{
 		return get() < rhs.get();
 	}
-	FORCEINLINE bool operator>(const obfuscxx& rhs) const requires (!is_single_pointer)
+	FORCEINLINE bool operator>(const obfuscxx& rhs) const
 	{
 		return get() > rhs.get();
 	}
-	FORCEINLINE bool operator<=(const obfuscxx& rhs) const requires (!is_single_pointer)
+	FORCEINLINE bool operator<=(const obfuscxx& rhs) const
 	{
 		return get() <= rhs.get();
 	}
-	FORCEINLINE bool operator>=(const obfuscxx& rhs) const requires (!is_single_pointer)
+	FORCEINLINE bool operator>=(const obfuscxx& rhs) const
 	{
 		return get() >= rhs.get();
 	}
 
-	FORCEINLINE obfuscxx operator+(const obfuscxx& rhs) const requires (!is_single_pointer)
+	FORCEINLINE Type operator+(const obfuscxx& rhs) const
 	{
-		return obfuscxx(get() + rhs.get());
+		return get() + rhs.get();
 	}
-	FORCEINLINE obfuscxx operator-(const obfuscxx& rhs) const requires (!is_single_pointer)
+	FORCEINLINE Type operator-(const obfuscxx& rhs) const
 	{
-		return obfuscxx(get() - rhs.get());
+		return get() - rhs.get();
 	}
+	FORCEINLINE Type operator*(const obfuscxx& rhs) const requires (!is_single_pointer)
+	{
+		return get() * rhs.get();
+	}
+	FORCEINLINE Type operator/(const obfuscxx& rhs) const requires (!is_single_pointer)
+	{
+		return get() / rhs.get();
+	}
+
 	FORCEINLINE obfuscxx& operator+=(const obfuscxx& rhs) requires (!is_single_pointer)
 	{
 		set(get() + rhs.get());
@@ -482,7 +491,6 @@ public:
 	{
 		return get();
 	}
-
 	FORCEINLINE Type& operator*() requires is_single_pointer
 	{
 		return *get();
