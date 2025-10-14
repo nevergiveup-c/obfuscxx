@@ -7,8 +7,10 @@
 #include <cstdint>
 #include <initializer_list>
 
+#if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
 using byte = uint8_t;
 using max_align_t = double;
+#endif
 
 #include <type_traits>
 
