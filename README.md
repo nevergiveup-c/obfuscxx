@@ -68,11 +68,11 @@ The screenshots show only a small portion of the int main() function. In reality
 | **GCC**  | 4.38 ns          | 17.5 ns (4.0x)   | 56.3 ns (12.9x)  |
 
 ### Binary Size Overhead:
-| Compiler | Without obfuscxx | With obfuscxx    | Overhead      |
-|:---------|:-----------------|:-----------------|:--------------|
-| **MSVC** | 17.0 KB          | 18.0 KB          | +1,024 bytes (**+5.9%**) |
-| **LLVM** | 17.5 KB          | 19.6 KB          | +1,560 bytes (**+8.7%**) |
-| **GCC**  | 47.8 KB          | 52.2 KB          | +4,491 bytes (**+9.2%**) |
+| Compiler | Without obfuscxx | With obfuscxx | Overhead                 |
+|:---------|:-----------------|:--------------|:-------------------------|
+| **MSVC** | 17.0 KB          | 18.0 KB       | +1,024 bytes (**+5.9%**) |
+| **LLVM** | 17.5 KB          | 19.6 KB       | +1,560 bytes (**+8.7%**) |
+| **GCC**  | 47.8 KB          | 52.2 KB       | +4,491 bytes (**+9.2%**) |
 
 ## Installation:
 Just add the header file to your project - `#include "include/obfuscxx.h"`
@@ -107,8 +107,8 @@ int main()
 }
 ```
 ## Building Tests and Benchmarks:
-1. Install `vcpkg`
-2. Add `VCPKG_ROOT` environment variable
+1. Install `vcpkg` and set `VCPKG_ROOT` environment variable
+2. Fetch baseline: `cd $VCPKG_ROOT && git fetch origin 34823ada10080ddca99b60e85f80f55e18a44eea`
 3. Configure: `cmake --preset <compiler>` (msvc/llvm/gcc)
 4. Build: `cmake --build --preset <compiler>` (--config Release/Debug)
 
