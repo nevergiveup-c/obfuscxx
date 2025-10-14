@@ -1,7 +1,7 @@
 {
   "name": "obfuscxx",
   "version": "1.0.0",
-  "builtin-baseline": "50c0cb48a0cf2f6fc5c7b2c0d2bafbe26d0a7ca2",
+  "builtin-baseline": "34823ada10080ddca99b60e85f80f55e18a44eea",
   "dependencies": [
     "gtest",
     "benchmark"

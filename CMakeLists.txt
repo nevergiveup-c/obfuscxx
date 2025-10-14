@@ -30,12 +30,6 @@ target_include_directories(obfuscxx_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/obfuscxx
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(obfuscxx_test PRIVATE -Wall -Wextra)
-elseif(MSVC)
-    target_compile_options(obfuscxx_test PRIVATE /W4)
-endif()
-
 enable_testing()
 add_test(NAME obfuscxx_test COMMAND obfuscxx_test)
 
