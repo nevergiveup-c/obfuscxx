@@ -535,3 +535,6 @@ public:
 private:
 	VOLATILE uint64_t data[Size]{};
 };
+
+#define obfusv(val) obfuscxx(val).get()
+#define obfuss(str) obfuscxx(str).to_string().c_str()

@@ -10,7 +10,7 @@
       "name": "msvc",
       "displayName": "MSVC Release",
       "binaryDir": "${sourceDir}/build/msvc",
-	  "toolset": "v143",
+	    "toolset": "v143",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-windows",

@@ -252,3 +252,11 @@ TEST(ObfuscxxTest, ImplicitConversion) {
     int result = value + 10;
     EXPECT_EQ(result, 52);
 }
+
+TEST(ObfuscxxTest, RValueDefines) {
+    EXPECT_STREQ(obfuss("str"), "str");
+    EXPECT_STREQ(obfuss(L"wstr"), L"wstr");
+    EXPECT_EQ(obfusv(52), 52);
+    EXPECT_EQ(obfusv(3.14f), 3.14f);
+    EXPECT_EQ(obfusv(-3.14f), -3.14f);
+}
