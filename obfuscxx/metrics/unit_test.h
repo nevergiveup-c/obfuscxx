@@ -260,3 +260,10 @@ TEST(ObfuscxxTest, RValueDefines) {
     EXPECT_EQ(obfusv(3.14f), 3.14f);
     EXPECT_EQ(obfusv(-3.14f), -3.14f);
 }
+
+#if defined(__clang__) || defined(__GNUC__)
+TEST(ObfuscxxTest, UserDefinedLiterals) {
+    EXPECT_STREQ("str"_obf, "str");
+    EXPECT_STREQ(L"wstr"_obfw, L"wstr");
+}
+#endif
