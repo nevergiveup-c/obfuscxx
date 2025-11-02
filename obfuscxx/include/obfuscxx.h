@@ -536,5 +536,12 @@ private:
 	VOLATILE uint64_t data[Size]{};
 };
 
+#if defined(__clang__) || defined(__GNUC__)
+template<typename CharType, CharType... chars> constexpr auto operator""_obf() {
+	constexpr CharType str[] = {chars..., '\0'};
+	return obfuscxx(str).to_string();
+}
+#endif
+
 #define obfusv(val) obfuscxx(val).get()
 #define obfuss(str) obfuscxx(str).to_string().c_str()
