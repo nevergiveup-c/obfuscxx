@@ -4,7 +4,7 @@ Debug/
 Release/
 x64/
 x86/
-build/
+../obfuscxx/build/
 .idea/
 
 *.o
