@@ -46,13 +46,6 @@ The screenshots show only a small portion of the int main() function. In reality
 | **Array Element Access (Low)** | 3.32 ns | **3.21 ns** ✓ | 4.38 ns (1.4x) |
 | **Array Element Access (Medium)** | 11.3 ns (3.4x) | **10.2 ns (3.2x)** ✓ | 17.5 ns (4.0x) |
 | **Array Element Access (High)** | 49.8 ns (15.0x) | **41.6 ns (13.0x)** ✓ | 56.3 ns (12.9x) |
-| **ValueModify** | 16.9 ns | **15.8 ns** ✓ | 67.2 ns (4.3x) |
-| **ValueVerify** | 16.0 ns | **14.3 ns** ✓ | 80.0 ns (5.6x) |
-| **ChecksumRecalc** | 1.34 ns | 0.241 ns | **0.118 ns** ✓ |
-| **ArrayModify** | 22.9 ns | **18.4 ns** ✓ | 65.7 ns (3.6x) |
-| **ArrayVerify** | 17.0 ns | **16.2 ns** ✓ | 73.6 ns (4.5x) |
-| **StringModify** | 26.9 ns | **22.9 ns** ✓ | 72.4 ns (3.2x) |
-| **StringVerify** | 18.2 ns | **13.5 ns** ✓ | 74.6 ns (5.5x) |
 
 ### Binary Size Overhead
 | Compiler | Without obfuscxx | With obfuscxx | Overhead |
