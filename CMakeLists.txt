@@ -30,6 +30,10 @@ target_include_directories(obfuscxx_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/obfuscxx
 )
 
+target_compile_options(obfuscxx_test PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/constexpr:steps10000000>
+)
+
 enable_testing()
 add_test(NAME obfuscxx_test COMMAND obfuscxx_test)
 
