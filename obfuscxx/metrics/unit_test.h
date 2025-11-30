@@ -1,20 +1,20 @@
 #pragma once
+#include <array>
 #include <gtest/gtest.h>
 
 #include "include/obfuscxx.h"
 
-TEST(ObfuscxxTest, IntegerValue)
-{
-    obfuscxx<int> int_value{ 100 };
-    EXPECT_EQ(int_value.get(), 100);
+TEST(ObfuscxxTest, IntegerValue) {
+    obfuscxx<int> value{ 100 };
+    EXPECT_EQ(value.get(), 100);
 
-    int_value = 50;
-    EXPECT_EQ(int_value.get(), 50);
+    value = 50;
+    EXPECT_EQ(value.get(), 50);
 }
 
 TEST(ObfuscxxTest, FloatValue) {
-    obfuscxx<float> float_value{ 1.5f };
-    EXPECT_FLOAT_EQ(float_value.get(), 1.5f);
+    obfuscxx<float> value{ 1.5f };
+    EXPECT_FLOAT_EQ(value.get(), 1.5f);
 }
 
 TEST(ObfuscxxTest, ArrayIteration) {
@@ -26,12 +26,12 @@ TEST(ObfuscxxTest, ArrayIteration) {
     }
 }
 
-TEST(ObfuscxxTest, StringValues) {
-    obfuscxx str("str");
-    EXPECT_STREQ(str.to_string(), "str");
+TEST(ObfuscxxTest, ToString) {
+    obfuscxx str("small test string");
+    EXPECT_STREQ(str.to_string(), "small test string");
 
-    obfuscxx wstr(L"wstr");
-    EXPECT_STREQ(wstr.to_string(), L"wstr");
+    obfuscxx wstr(L"small test string");
+    EXPECT_STREQ(wstr.to_string(), L"small test string");
 }
 
 TEST(ObfuscxxTest, PointerValue) {
@@ -143,6 +143,19 @@ TEST(ObfuscxxTest, ArrayCopyTo) {
     }
 }
 
+TEST(ObfuscxxTest, ToArray) {
+    const obfuscxx<int, 4> array{ 0, 1, 2, 3 };
+    auto const deobf_array =  array.to_array();
+
+    std::array<int, 4> buffer{};
+    memcpy(buffer.data(), deobf_array.get(), deobf_array.size_bytes());
+
+    EXPECT_EQ(buffer[0], 0);
+    EXPECT_EQ(buffer[1], 1);
+    EXPECT_EQ(buffer[2], 2);
+    EXPECT_EQ(buffer[3], 3);
+}
+
 TEST(ObfuscxxTest, ArrayAssignment) {
     obfuscxx<int, 3> array{ 1, 2, 3 };
 
@@ -178,17 +191,19 @@ TEST(ObfuscxxTest, PointerOperators) {
     delete ptr.get();
 }
 
+TEST(ObfuscxxTest, EmptyString) {
+    obfuscxx str("");
+    EXPECT_STREQ(str.to_string(), "");
+}
+
 TEST(ObfuscxxTest, LongString) {
-    obfuscxx<char, 48, obf_level::Low> str("this is a very long test string for obfuscation");
-    auto result = str.to_string();
-    EXPECT_STREQ(result, "this is a very long test string for obfuscation");
+    obfuscxx str("this is a very long test string for obfuscation");
+    EXPECT_STREQ(str.to_string(), "this is a very long test string for obfuscation");
 }
 
 TEST(ObfuscxxTest, ConstCorrectness) {
     const obfuscxx<int> const_value{ 42 };
-
     EXPECT_EQ(const_value.get(), 42);
-
     EXPECT_EQ(const_value(), 42);
 }
 
@@ -254,8 +269,8 @@ TEST(ObfuscxxTest, ImplicitConversion) {
 }
 
 TEST(ObfuscxxTest, RValueDefines) {
-    EXPECT_STREQ(obfuss("str"), "str");
-    EXPECT_STREQ(obfuss(L"wstr"), L"wstr");
+    EXPECT_STREQ(obfuss("small test string"), "small test string");
+    EXPECT_STREQ(obfuss(L"small test string"), L"small test string");
     EXPECT_EQ(obfusv(52), 52);
     EXPECT_EQ(obfusv(3.14f), 3.14f);
     EXPECT_EQ(obfusv(-3.14f), -3.14f);
@@ -263,7 +278,7 @@ TEST(ObfuscxxTest, RValueDefines) {
 
 #if defined(__clang__) || defined(__GNUC__)
 TEST(ObfuscxxTest, UserDefinedLiterals) {
-    EXPECT_STREQ("str"_obf, "str");
-    EXPECT_STREQ(L"wstr"_obf, L"wstr");
+    EXPECT_STREQ("small test string"_obf, "small test string");
+    EXPECT_STREQ(L"small test string"_obf, L"small test string");
 }
 #endif
