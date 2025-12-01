@@ -4,15 +4,15 @@
   <img src="images/banner.png">
 </p>
 
-## Description:
+## Description
 Header-only compile-time variables obfuscation library for C++20 and later.
 
-## How it works:
+## How it works
 During compilation, data is encrypted via eXtended Tiny Encryption Algorithm (XTEA). Decryption uses SIMD instructions (AVX/SSE/NEON) at runtime, making static analysis considerably more complicated. Key entropy is based on the preprocessor macro `__COUNTER__`, the file name(`__FILE__`), and the line number (`__LINE__`) where the variable is defined, and the build time (`__TIME__`) (note: build time is not included when compiling with WDM).
 
 By selecting different encryption levels (Low, Medium, High), you can control the number of encryption rounds. With Low, there are 2 rounds; Medium uses 6; and High adjusts the number of rounds dynamically based on the key entropy, ranging from 6 to 20. This lets you apply lighter encryption to frequently accessed data, and stronger encryption to data that’s used less often.
 
-## Encryption example:
+## Decompilation view
 The screenshots show only a small portion of the int main() function. In reality, the function can grow to around 250 lines depending on the compiler.
 
 <table align="center">
@@ -24,8 +24,8 @@ The screenshots show only a small portion of the int main() function. In reality
 </table>
 <p align="center"><em>MSVC, LLVM, GCC compilation (int main()) (Level: Low)</em></p>
 
-## Performance Benchmarks
-### Runtime Performance Impact
+## Benchmarks
+### Runtime performance impact
 | Operation | MSVC | LLVM | GCC |
 |-----------|------|------|-----|
 | **Integer Operations (Low)** | 3.62 ns | **3.31 ns** ✓ | 4.65 ns (1.4x) |
@@ -46,22 +46,15 @@ The screenshots show only a small portion of the int main() function. In reality
 | **Array Element Access (Low)** | 3.32 ns | **3.21 ns** ✓ | 4.38 ns (1.4x) |
 | **Array Element Access (Medium)** | 11.3 ns (3.4x) | **10.2 ns (3.2x)** ✓ | 17.5 ns (4.0x) |
 | **Array Element Access (High)** | 49.8 ns (15.0x) | **41.6 ns (13.0x)** ✓ | 56.3 ns (12.9x) |
-| **ValueModify** | 16.9 ns | **15.8 ns** ✓ | 67.2 ns (4.3x) |
-| **ValueVerify** | 16.0 ns | **14.3 ns** ✓ | 80.0 ns (5.6x) |
-| **ChecksumRecalc** | 1.34 ns | 0.241 ns | **0.118 ns** ✓ |
-| **ArrayModify** | 22.9 ns | **18.4 ns** ✓ | 65.7 ns (3.6x) |
-| **ArrayVerify** | 17.0 ns | **16.2 ns** ✓ | 73.6 ns (4.5x) |
-| **StringModify** | 26.9 ns | **22.9 ns** ✓ | 72.4 ns (3.2x) |
-| **StringVerify** | 18.2 ns | **13.5 ns** ✓ | 74.6 ns (5.5x) |
 
-### Binary Size Overhead
+### Binary size overhead
 | Compiler | Without obfuscxx | With obfuscxx | Overhead |
 |:---------|:-----------------|:--------------|:---------|
 | **MSVC** | 17.0 KB | 18.0 KB | +1,024 bytes (**+5.9%**) |
 | **LLVM** | 17.5 KB | 19.6 KB | +1,560 bytes (**+8.7%**) |
 | **GCC** | 47.8 KB | 52.2 KB | +4,491 bytes (**+9.2%**) |
 
-**Test Environment:**
+**Test environment:**
 - CPU: 16 cores @ 2496 MHz
 - L1 Data Cache: 48 KiB (x8)
 - L1 Instruction Cache: 32 KiB (x8)
@@ -69,10 +62,10 @@ The screenshots show only a small portion of the int main() function. In reality
 - L3 Unified Cache: 16384 KiB (x1)
 - Date: 2025-11-04
 
-## Installation:
+## Installation
 Just add the header file to your project - `#include "include/obfuscxx.h"`
 
-## Examples:
+## Examples
 ### Basic:
 ```cpp
 #include "include/obfuscxx.h"
@@ -102,7 +95,7 @@ int main() {
 }
 ```
 
-### User-Defined Literal (Clang/GCC only):
+### User-Defined literal (Clang/GCC only):
 ```cpp
 #include "include/obfuscxx.h"
 
@@ -120,23 +113,23 @@ int main() {
     std::cout << obfuss("Hello, World!") << '\n';
 }
 ```
-## Building Tests and Benchmarks:
+## Building tests and benchmarks
 1. Install `vcpkg` and set `VCPKG_ROOT` environment variable
 2. Fetch baseline: `cd $VCPKG_ROOT && git fetch origin 34823ada10080ddca99b60e85f80f55e18a44eea`
-3. Configure: `cmake --preset <compiler>` (msvc/llvm/gcc)
+3. Configure: `cmake --preset <compiler>` (MSVC/Clang/GCC)
 4. Build: `cmake --build --preset <compiler>` (--config Release/Debug)
 
-## Requirements:
+## Requirements
 - C++20 or later
 - Compiler with SIMD support (AVX/SSE/NEON)
 - CMake 3.15+ (for building tests)
 - vcpkg (for dependencies)
 
-## Compiler Support:
+## Compiler support
 - `MSVC (+wdm)`
-- `CLANG`
+- `Clang`
 - `GCC`
 
-## Architecture Support:
+## Architecture support
 - `x86/x86-64` (SSE/AVX)
 - `ARM` (NEON)
