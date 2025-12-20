@@ -17,6 +17,7 @@ using max_align_t = double;
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(__ARM_NEON)
 #include <arm_neon.h>
 #elif defined(__clang__) || defined(__GNUC__)
+#include <cpuid.h>
 #include <immintrin.h>
 #elif defined(_MSC_VER)
 #include <intrin.h>
