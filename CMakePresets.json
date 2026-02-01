@@ -7,38 +7,39 @@
   },
   "configurePresets": [
     {
-      "name": "msvc",
-      "displayName": "MSVC Release",
-      "binaryDir": "${sourceDir}/build/msvc",
-	    "toolset": "v143",
+      "name": "base-release",
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "x64-windows",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
+    },
+    {
+      "name": "msvc",
+      "inherits": "base-release",
+      "displayName": "MSVC Release",
+      "binaryDir": "${sourceDir}/build/msvc",
+      "toolset": "v143"
     },
     {
       "name": "llvm",
+      "inherits": "base-release",
       "displayName": "LLVM Release",
       "binaryDir": "${sourceDir}/build/llvm",
-      "toolset": "ClangCL",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "x64-windows",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-      }
+      "toolset": "ClangCL"
     },
     {
       "name": "gcc",
+      "inherits": "base-release",
       "displayName": "GCC Release",
       "binaryDir": "${sourceDir}/build/gcc",
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "gcc",
         "CMAKE_CXX_COMPILER": "g++",
-        "VCPKG_TARGET_TRIPLET": "x64-mingw-static",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic"
       }
     }
   ],
