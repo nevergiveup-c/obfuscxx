@@ -364,9 +364,12 @@ class obfuscxx {
     }
 
     static FORCEINLINE bool cpu_has_avx2() {
-        int cpuInfo[4]{};
-        __cpuidex(cpuInfo, 7, 0);
-        return (cpuInfo[1] & (1 << 5)) != 0;
+        static const bool cached = []() {
+            int cpuInfo[4]{};
+            __cpuidex(cpuInfo, 7, 0);
+            return (cpuInfo[1] & (1 << 5)) != 0;
+        }();
+        return cached;
     }
 
 public:
