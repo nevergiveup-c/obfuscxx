@@ -47,7 +47,7 @@ The screenshots show only a small portion of the int main() function. In reality
 | **Array Element Access (Medium)** | 11.3 ns (3.4x) | **10.2 ns (3.2x)** ✓ | 17.5 ns (4.0x) |
 | **Array Element Access (High)** | 49.8 ns (15.0x) | **41.6 ns (13.0x)** ✓ | 56.3 ns (12.9x) |
 
-**Test environment:**
+### Test environment
 - CPU: 16 cores @ 2496 MHz
 - L1 Data Cache: 48 KiB (x8)
 - L1 Instruction Cache: 32 KiB (x8)
@@ -59,7 +59,7 @@ The screenshots show only a small portion of the int main() function. In reality
 Just add the header file to your project - `#include "include/obfuscxx.h"`
 
 ## Examples
-### Basic:
+### Basic
 ```cpp
 #include "include/obfuscxx.h"
 
@@ -88,7 +88,7 @@ int main() {
 }
 ```
 
-### User-Defined literal (Clang/GCC only):
+### User-Defined literal (Clang/GCC only)
 ```cpp
 #include "include/obfuscxx.h"
 
@@ -97,7 +97,7 @@ int main() {
 }
 ```
 
-### Macros:
+### Macros
 ```cpp
 #include "include/obfuscxx.h"
 
