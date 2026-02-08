@@ -11,50 +11,105 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "msvc-x64",
+      "inherits": "base-release",
+      "displayName": "MSVC x64 Release",
+      "binaryDir": "${sourceDir}/build/msvc-x64",
+      "toolset": "v143",
+      "cacheVariables": {
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
     },
     {
-      "name": "msvc",
+      "name": "msvc-x86",
       "inherits": "base-release",
-      "displayName": "MSVC Release",
-      "binaryDir": "${sourceDir}/build/msvc",
-      "toolset": "v143"
+      "displayName": "MSVC x86 Release",
+      "binaryDir": "${sourceDir}/build/msvc-x86",
+      "toolset": "v143",
+      "architecture": "Win32",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
+        "VCPKG_TARGET_TRIPLET": "x86-windows"
+      }
     },
     {
-      "name": "llvm",
+      "name": "llvm-x64",
       "inherits": "base-release",
-      "displayName": "LLVM Release",
-      "binaryDir": "${sourceDir}/build/llvm",
-      "toolset": "ClangCL"
+      "displayName": "LLVM x64 Release",
+      "binaryDir": "${sourceDir}/build/llvm-x64",
+      "toolset": "ClangCL",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
     },
     {
-      "name": "gcc",
+      "name": "gcc-mingw-x64",
       "inherits": "base-release",
-      "displayName": "GCC Release",
-      "binaryDir": "${sourceDir}/build/gcc",
+      "displayName": "GCC MinGW x64 Release",
+      "binaryDir": "${sourceDir}/build/gcc-mingw-x64",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "gcc",
         "CMAKE_CXX_COMPILER": "g++",
         "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic"
       }
+    },
+    {
+      "name": "gcc-linux-x64",
+      "inherits": "base-release",
+      "displayName": "GCC Linux x64 Release",
+      "binaryDir": "${sourceDir}/build/gcc-linux-x64",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      }
+    },
+    {
+      "name": "gcc-linux-x86",
+      "inherits": "base-release",
+      "displayName": "GCC Linux x86 Release",
+      "binaryDir": "${sourceDir}/build/gcc-linux-x86",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_C_FLAGS": "-m32 -msse -msse2",
+        "CMAKE_CXX_FLAGS": "-m32 -msse -msse2",
+        "VCPKG_TARGET_TRIPLET": "x86-linux"
+      }
     }
   ],
   "buildPresets": [
     {
-      "name": "msvc",
-      "configurePreset": "msvc"
+      "name": "msvc-x64",
+      "configurePreset": "msvc-x64"
     },
     {
-      "name": "llvm",
-      "configurePreset": "llvm"
+      "name": "msvc-x86",
+      "configurePreset": "msvc-x86"
     },
     {
-      "name": "gcc",
-      "configurePreset": "gcc"
+      "name": "llvm-x64",
+      "configurePreset": "llvm-x64"
+    },
+    {
+      "name": "gcc-mingw-x64",
+      "configurePreset": "gcc-mingw-x64"
+    },
+    {
+      "name": "gcc-linux-x64",
+      "configurePreset": "gcc-linux-x64"
+    },
+    {
+      "name": "gcc-linux-x86",
+      "configurePreset": "gcc-linux-x86"
     }
   ]
 }
