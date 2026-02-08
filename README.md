@@ -120,19 +120,19 @@ int main() {
 
 ## Platform Support
 
-### Operating Systems
-- Windows
-- Linux
+### Compilers
+- MSVC (+ WDM)
+- Clang
+- GCC
 
 ### Architectures
 - x86 (SSE/SSE2)
 - x86-64 (SSE/AVX)
 - ARM64 (NEON)
 
-### Compilers
-- MSVC (including WDM)
-- Clang
-- GCC
+### Operating Systems
+- Windows
+- Linux
 
 ## License
-[MIT](LICENSE)
+**obfuscxx** is distributed under the [MIT license](LICENSE).
