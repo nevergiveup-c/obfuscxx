@@ -1,4 +1,3 @@
-
 // obfuscxx – compile-time variables obfuscator
 // SPDX-FileCopyrightText: 2025-2026 Alexander (nevergiveup-c)
 // SPDX-License-Identifier: MIT
@@ -10,8 +9,8 @@
 #include <initializer_list>
 
 #if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
-using byte = std::uint8_t;
-using max_align_t = double;
+    using byte = std::uint8_t;
+    using max_align_t = double;
 #endif
 
 #include <type_traits>
@@ -28,15 +27,15 @@ using max_align_t = double;
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
-#define VOLATILE
+#define OBFUSCXX_VOLATILE
 #elif defined(_MSC_VER)
-#define VOLATILE volatile
+#define OBFUSCXX_VOLATILE volatile
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
-#define FORCEINLINE __attribute__((always_inline)) inline
+#define OBFUSCXX_FORCEINLINE __attribute__((always_inline)) inline
 #else
-#define FORCEINLINE __forceinline
+#define OBFUSCXX_FORCEINLINE __forceinline
 #endif
 
 #if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
@@ -44,15 +43,15 @@ using max_align_t = double;
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
-#define MEM_BARRIER(...) __asm__ volatile("" : "+r"(__VA_ARGS__) :: "memory");
+#define OBFUSCXX_MEM_BARRIER(...) __asm__ volatile("" : "+r"(__VA_ARGS__) :: "memory");
 #elif defined(_MSC_VER)
-#define MEM_BARRIER(...) _ReadWriteBarrier();
+#define OBFUSCXX_MEM_BARRIER(...) _ReadWriteBarrier();
 #endif
 
 #ifndef OBFUSCXX_DISABLE_WARNS
-#define RUNTIME_WARNING [[deprecated("OBFUSCXX: Runtime set() uses encrypt method without SIMD obfuscation. For better protection, initialize at compile-time.")]]
+#define OBFUSCXX_RUNTIME_WARNING [[deprecated("OBFUSCXX: Runtime set() uses encrypt method without SIMD obfuscation. For better protection, initialize at compile-time.")]]
 #else
-#define RUNTIME_WARNING
+#define OBFUSCXX_RUNTIME_WARNING
 #endif
 
 namespace detail {
@@ -62,7 +61,7 @@ namespace detail {
         return x ^ (x >> 31);
     }
 
-    template<std::size_t N> FORCEINLINE consteval std::uint64_t hash_compile_time(char const (&data)[N]) {
+    template<std::size_t N> OBFUSCXX_FORCEINLINE consteval std::uint64_t hash_compile_time(char const (&data)[N]) {
         std::uint64_t hash = 0;
 
         for (auto i = 0; i < N - 1; ++i) {
@@ -78,7 +77,7 @@ namespace detail {
         return hash;
     }
 
-    FORCEINLINE std::uint64_t hash_runtime(char const *str) {
+    OBFUSCXX_FORCEINLINE std::uint64_t hash_runtime(char const *str) {
         std::size_t length = 0;
         while (str[length])
             ++length;
@@ -111,24 +110,24 @@ namespace detail {
     }
 }
 
-#define HASH( s ) detail::hash_compile_time( s )
-#define HASH_RT( s ) detail::hash_runtime( s )
+#define OBFUSCXX_HASH( s ) detail::hash_compile_time( s )
+#define OBFUSCXX_HASH_RT( s ) detail::hash_runtime( s )
 
 #if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
 #define OBFUSCXX_ENTROPY ( \
-detail::splitmix64( \
-(HASH(__FILE__) * 0x517cc1b727220a95ULL) + \
-((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
-(detail::rol64((std::uint64_t)__COUNTER__, 37) ^ ((std::uint64_t)__LINE__ * 0xff51afd7ed558ccdULL)) \
-) \
+    detail::splitmix64( \
+        (OBFUSCXX_HASH(__FILE__) * 0x517cc1b727220a95ULL) + \
+        ((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
+        (detail::rol64((std::uint64_t)__COUNTER__, 37) ^ ((std::uint64_t)__LINE__ * 0xff51afd7ed558ccdULL)) \
+    ) \
 )
 #else
 #define OBFUSCXX_ENTROPY ( \
-detail::splitmix64( \
-HASH(__FILE__) + \
-((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
-(HASH(__TIME__) ^ ((std::uint64_t)__COUNTER__ << 32)) \
-) \
+    detail::splitmix64( \
+        OBFUSCXX_HASH(__FILE__) + \
+        ((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
+        (OBFUSCXX_HASH(__TIME__) ^ ((std::uint64_t)__COUNTER__ << 32)) \
+    ) \
 )
 #endif
 
@@ -182,8 +181,8 @@ class obfuscxx {
         return (static_cast<std::uint64_t>(v1) << 32) | v0;
     }
 
-    static FORCEINLINE Type decrypt(std::uint64_t value) {
-        MEM_BARRIER(value)
+    static OBFUSCXX_FORCEINLINE Type decrypt(std::uint64_t value) {
+        OBFUSCXX_MEM_BARRIER(value)
 
         std::uint32_t v0 = static_cast<std::uint32_t>(value);
         std::uint32_t v1 = static_cast<std::uint32_t>(value >> 32);
@@ -192,7 +191,7 @@ class obfuscxx {
 #if defined(__aarch64__) || defined(_M_ARM64)
         // ARM64 - NEON
         for (std::uint32_t i = 0; i < xtea_rounds; ++i) {
-            MEM_BARRIER(v0, v1, sum)
+            OBFUSCXX_MEM_BARRIER(v0, v1, sum)
 
             // v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key)
             uint32x4_t neon_v0 = vdupq_n_u32(v0);
@@ -210,7 +209,7 @@ class obfuscxx {
 
             sum -= xtea_delta;
 
-            MEM_BARRIER(v0, v1, sum)
+            OBFUSCXX_MEM_BARRIER(v0, v1, sum)
 
             // v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key)
             neon_v1 = vdupq_n_u32(v1);
@@ -230,7 +229,7 @@ class obfuscxx {
 #elif defined(__clang__) || defined(__GNUC__)
         // x86/x64 GCC/Clang - SSE2
         for (std::uint32_t i = 0; i < xtea_rounds; ++i) {
-            MEM_BARRIER(v0, v1, sum)
+            OBFUSCXX_MEM_BARRIER(v0, v1, sum)
 
             // v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key)
             __m128i xmm_v0 = _mm_cvtsi32_si128(v0);
@@ -248,7 +247,7 @@ class obfuscxx {
 
             sum -= xtea_delta;
 
-            MEM_BARRIER(v0, v1, sum)
+            OBFUSCXX_MEM_BARRIER(v0, v1, sum)
 
             // v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key)
             xmm_v1 = _mm_cvtsi32_si128(v1);
@@ -268,7 +267,7 @@ class obfuscxx {
 #else
 
         for (std::uint32_t i = 0; i < xtea_rounds; ++i) {
-            MEM_BARRIER(v0, v1, sum)
+            OBFUSCXX_MEM_BARRIER(v0, v1, sum)
 
             // v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key)
             if (cpu_has_avx2()) {
@@ -301,7 +300,7 @@ class obfuscxx {
 
             sum -= xtea_delta;
 
-            MEM_BARRIER(v0, v1, sum)
+            OBFUSCXX_MEM_BARRIER(v0, v1, sum)
 
             // v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key)
             if (cpu_has_avx2()) {
@@ -352,7 +351,7 @@ class obfuscxx {
         }
     }
 
-    static FORCEINLINE Type from_uint64(std::uint64_t value) {
+    static OBFUSCXX_FORCEINLINE Type from_uint64(std::uint64_t value) {
         if constexpr (std::is_pointer_v<Type>) {
             return reinterpret_cast<Type>(value);
         } else if constexpr (std::is_floating_point_v<Type>) {
@@ -366,7 +365,7 @@ class obfuscxx {
         }
     }
 
-    static FORCEINLINE bool cpu_has_avx2() {
+    static OBFUSCXX_FORCEINLINE bool cpu_has_avx2() {
         static const bool cached = []() {
             int cpuInfo[4]{};
             __cpuidex(cpuInfo, 7, 0);
@@ -403,19 +402,19 @@ public:
             data[i++] = encrypt(v);
     }
 
-    FORCEINLINE Type get() const requires is_single {
+    OBFUSCXX_FORCEINLINE Type get() const requires is_single {
         volatile const std::uint64_t *ptr = &data[0];
         std::uint64_t val = *ptr;
         return decrypt(val);
     }
 
-    FORCEINLINE Type get(std::size_t i) const requires is_array {
+    OBFUSCXX_FORCEINLINE Type get(std::size_t i) const requires is_array {
         volatile const std::uint64_t *ptr = &data[i];
         std::uint64_t val = *ptr;
         return decrypt(val);
     }
 
-    FORCEINLINE void copy_to(Type *out, std::size_t count) const requires is_array {
+    OBFUSCXX_FORCEINLINE void copy_to(Type *out, std::size_t count) const requires is_array {
         std::size_t n = (count < Size) ? count : Size;
         for (std::size_t i = 0; i < n; ++i) {
             volatile const std::uint64_t *ptr = &data[i];
@@ -423,15 +422,15 @@ public:
         }
     }
 
-    RUNTIME_WARNING FORCEINLINE void set(Type val) requires is_single {
+    OBFUSCXX_RUNTIME_WARNING OBFUSCXX_FORCEINLINE void set(Type val) requires is_single {
         data[0] = encrypt(val);
     }
 
-    RUNTIME_WARNING FORCEINLINE void set(Type val, std::size_t i) requires is_array {
+    OBFUSCXX_RUNTIME_WARNING OBFUSCXX_FORCEINLINE void set(Type val, std::size_t i) requires is_array {
         data[i] = encrypt(val);
     }
 
-    RUNTIME_WARNING FORCEINLINE void set(const std::initializer_list<Type> &list) requires is_array {
+    OBFUSCXX_RUNTIME_WARNING OBFUSCXX_FORCEINLINE void set(const std::initializer_list<Type> &list) requires is_array {
         for (std::size_t i{}; const auto &val: list) {
             if (i < Size) {
                 data[i++] = encrypt(val);
@@ -439,29 +438,29 @@ public:
         }
     }
 
-    FORCEINLINE Type operator()() const requires is_single {
+    OBFUSCXX_FORCEINLINE Type operator()() const requires is_single {
         return decrypt(data[0]);
     }
 
-    FORCEINLINE Type operator[](std::size_t i) const requires is_array {
+    OBFUSCXX_FORCEINLINE Type operator[](std::size_t i) const requires is_array {
         return decrypt(data[i]);
     }
 
-    FORCEINLINE obfuscxx &operator=(Type val) requires is_single {
+    OBFUSCXX_FORCEINLINE obfuscxx &operator=(Type val) requires is_single {
         set(val);
         return *this;
     }
 
-    FORCEINLINE obfuscxx &operator=(const std::initializer_list<Type> &list) requires is_array {
+    OBFUSCXX_FORCEINLINE obfuscxx &operator=(const std::initializer_list<Type> &list) requires is_array {
         set(list);
         return *this;
     }
 
-    FORCEINLINE bool operator==(const obfuscxx &rhs) const requires is_single {
+    OBFUSCXX_FORCEINLINE bool operator==(const obfuscxx &rhs) const requires is_single {
         return get() == rhs.get();
     }
 
-    FORCEINLINE bool operator==(const obfuscxx &rhs) const requires is_array {
+    OBFUSCXX_FORCEINLINE bool operator==(const obfuscxx &rhs) const requires is_array {
         for (std::size_t i = 0; i < Size; ++i) {
             if (get(i) != rhs.get(i)) {
                 return false;
@@ -470,61 +469,61 @@ public:
         return true;
     }
 
-    FORCEINLINE bool operator!=(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE bool operator!=(const obfuscxx &rhs) const {
         return !(*this == rhs);
     }
 
-    FORCEINLINE operator Type() const requires is_single {
+    OBFUSCXX_FORCEINLINE operator Type() const requires is_single {
         return get();
     }
 
-    FORCEINLINE bool operator<(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE bool operator<(const obfuscxx &rhs) const {
         return get() < rhs.get();
     }
 
-    FORCEINLINE bool operator>(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE bool operator>(const obfuscxx &rhs) const {
         return get() > rhs.get();
     }
 
-    FORCEINLINE bool operator<=(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE bool operator<=(const obfuscxx &rhs) const {
         return get() <= rhs.get();
     }
 
-    FORCEINLINE bool operator>=(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE bool operator>=(const obfuscxx &rhs) const {
         return get() >= rhs.get();
     }
 
-    FORCEINLINE Type operator+(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE Type operator+(const obfuscxx &rhs) const {
         return get() + rhs.get();
     }
 
-    FORCEINLINE Type operator-(const obfuscxx &rhs) const {
+    OBFUSCXX_FORCEINLINE Type operator-(const obfuscxx &rhs) const {
         return get() - rhs.get();
     }
 
-    FORCEINLINE Type operator*(const obfuscxx &rhs) const requires (!is_single_pointer) {
+    OBFUSCXX_FORCEINLINE Type operator*(const obfuscxx &rhs) const requires (!is_single_pointer) {
         return get() * rhs.get();
     }
 
-    FORCEINLINE Type operator/(const obfuscxx &rhs) const requires (!is_single_pointer) {
+    OBFUSCXX_FORCEINLINE Type operator/(const obfuscxx &rhs) const requires (!is_single_pointer) {
         return get() / rhs.get();
     }
 
-    FORCEINLINE obfuscxx &operator+=(const obfuscxx &rhs) requires (!is_single_pointer) {
+    OBFUSCXX_FORCEINLINE obfuscxx &operator+=(const obfuscxx &rhs) requires (!is_single_pointer) {
         set(get() + rhs.get());
         return *this;
     }
 
-    FORCEINLINE obfuscxx &operator-=(const obfuscxx &rhs) requires (!is_single_pointer) {
+    OBFUSCXX_FORCEINLINE obfuscxx &operator-=(const obfuscxx &rhs) requires (!is_single_pointer) {
         set(get() - rhs.get());
         return *this;
     }
 
-    FORCEINLINE Type operator->() requires is_single_pointer {
+    OBFUSCXX_FORCEINLINE Type operator->() requires is_single_pointer {
         return get();
     }
 
-    FORCEINLINE Type &operator*() requires is_single_pointer {
+    OBFUSCXX_FORCEINLINE Type &operator*() requires is_single_pointer {
         return *get();
     }
 
@@ -547,8 +546,7 @@ public:
     iterator end() const requires is_array { return {this, Size}; }
     static constexpr std::size_t size() { return Size; }
 
-    template<class CharType, std::size_t N>
-    struct string_copy {
+    template<class CharType, std::size_t N> struct string_copy {
     private:
         static constexpr bool is_char = std::is_same_v<CharType, char> ||
                                         std::is_same_v<CharType, const char>;
@@ -570,8 +568,7 @@ public:
         CharType data[N];
     };
 
-    template<class ArrayType, std::size_t N>
-    struct array_copy {
+    template<class ArrayType, std::size_t N> struct array_copy {
         const ArrayType *get() const { return data; }
 
         const ArrayType *begin() const { return data; }
@@ -583,7 +580,7 @@ public:
         ArrayType data[N];
     };
 
-    FORCEINLINE string_copy<Type, Size> to_string() const requires (is_char || is_wchar) {
+    OBFUSCXX_FORCEINLINE string_copy<Type, Size> to_string() const requires (is_char || is_wchar) {
         string_copy<Type, Size> result{};
         if constexpr (is_array) {
             copy_to(result.data, Size);
@@ -593,7 +590,7 @@ public:
         return result;
     }
 
-    FORCEINLINE array_copy<Type, Size> to_array() const requires (is_array) {
+    OBFUSCXX_FORCEINLINE array_copy<Type, Size> to_array() const requires (is_array) {
         array_copy<Type, Size> result{};
         if constexpr (is_array) {
             copy_to(result.data, Size);
@@ -604,12 +601,11 @@ public:
     }
 
 private:
-    VOLATILE std::uint64_t data[Size]{};
+    OBFUSCXX_VOLATILE std::uint64_t data[Size]{};
 };
 
 #if defined(__clang__) || defined(__GNUC__)
-template<typename CharType, CharType... chars>
-constexpr auto operator""_obf() {
+template<typename CharType, CharType... chars> constexpr auto operator""_obf() {
     constexpr CharType str[] = {chars..., '\0'};
     return obfuscxx(str).to_string();
 }
