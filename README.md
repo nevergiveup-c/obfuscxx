@@ -22,7 +22,7 @@ The screenshots show only a small portion of the int main() function. In reality
 <td><img src="images/gcc.png" width="400"/></td>
 </tr>
 </table>
-<p align="center"><em>MSVC, LLVM, GCC compilation (int main()) (Level: Low)</em></p>
+<p align="center"><em>MSVC, LLVM, GCC compilation (int main(), Level: Low, Arch: x86-64)</em></p>
 
 ## Benchmarks
 ### Runtime performance impact
@@ -118,11 +118,21 @@ int main() {
 - CMake 3.15+ (for building tests)
 - vcpkg (for dependencies)
 
-## Compiler support
-- `MSVC (+wdm)`
-- `Clang`
-- `GCC`
+## Platform Support
 
-## Architecture support
-- `x86/x86-64` (SSE/AVX)
-- `ARM` (NEON)
+### Operating Systems
+- Windows
+- Linux
+
+### Architectures
+- x86 (SSE/SSE2)
+- x86-64 (SSE/AVX)
+- ARM64 (NEON)
+
+### Compilers
+- MSVC (including WDM)
+- Clang
+- GCC
+
+## License
+[MIT](LICENSE)
