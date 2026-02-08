@@ -1,8 +1,10 @@
-#pragma once
 
-// MIT License
-// Copyright (c) 2025 Alexander (nevergiveup-c)
-// https://github.com/nevergiveup-c/obfuscxx
+// obfuscxx – compile-time variables obfuscator
+// SPDX-FileCopyrightText: 2025-2026 Alexander (nevergiveup-c)
+// SPDX-License-Identifier: MIT
+
+#ifndef NGU_OBFUSCXX_H
+#define NGU_OBFUSCXX_H
 
 #include <cstdint>
 #include <initializer_list>
@@ -21,6 +23,8 @@ using max_align_t = double;
 #elif defined(__GNUC__)
 #include <immintrin.h>
 #include <cpuid.h>
+#else
+#error Unsupported compiler
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
@@ -51,81 +55,82 @@ using max_align_t = double;
 #define RUNTIME_WARNING
 #endif
 
-constexpr std::uint64_t splitmix64(std::uint64_t x) {
-    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
-    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
-    return x ^ (x >> 31);
+namespace detail {
+    constexpr std::uint64_t splitmix64(std::uint64_t x) {
+        x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+        x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+        return x ^ (x >> 31);
+    }
+
+    template<std::size_t N> FORCEINLINE consteval std::uint64_t hash_compile_time(char const (&data)[N]) {
+        std::uint64_t hash = 0;
+
+        for (auto i = 0; i < N - 1; ++i) {
+            hash += data[i] >= 'A' && data[i] <= 'Z' ? data[i] + ('a' - 'A') : data[i];
+            hash += hash << 8;
+            hash ^= hash >> 11;
+        }
+
+        hash += hash << 5;
+        hash ^= hash >> 13;
+        hash += hash << 10;
+
+        return hash;
+    }
+
+    FORCEINLINE std::uint64_t hash_runtime(char const *str) {
+        std::size_t length = 0;
+        while (str[length])
+            ++length;
+
+        std::uint64_t hash = 0;
+
+        for (auto i = 0u; i < length; i++) {
+            hash += str[i] >= 'A' && str[i] <= 'Z' ? str[i] + ('a' - 'A') : str[i];
+            hash += hash << 8;
+            hash ^= hash >> 11;
+        }
+
+        hash += hash << 5;
+        hash ^= hash >> 13;
+        hash += hash << 10;
+
+        return hash;
+    }
+
+    constexpr std::uint64_t rol64(std::uint64_t x, int n) {
+        n &= 63;
+        if (n == 0) return x;
+        return (x << n) | (x >> (64 - n));
+    }
+
+    constexpr std::uint64_t ror64(std::uint64_t x, int n) {
+        n &= 63;
+        if (n == 0) return x;
+        return (x >> n) | (x << (64 - n));
+    }
 }
+
+#define HASH( s ) detail::hash_compile_time( s )
+#define HASH_RT( s ) detail::hash_runtime( s )
 
 #if defined(_KERNEL_MODE) || defined(_WIN64_DRIVER)
 #define OBFUSCXX_ENTROPY ( \
-    splitmix64( \
-        (HASH(__FILE__) * 0x517cc1b727220a95ULL) + \
-        ((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
-        (rol64((std::uint64_t)__COUNTER__, 37) ^ ((std::uint64_t)__LINE__ * 0xff51afd7ed558ccdULL)) \
-    ) \
+detail::splitmix64( \
+(HASH(__FILE__) * 0x517cc1b727220a95ULL) + \
+((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
+(detail::rol64((std::uint64_t)__COUNTER__, 37) ^ ((std::uint64_t)__LINE__ * 0xff51afd7ed558ccdULL)) \
+) \
 )
 #else
 #define OBFUSCXX_ENTROPY ( \
-    splitmix64( \
-        HASH(__FILE__) + \
-        ((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
-        (HASH(__TIME__) ^ ((std::uint64_t)__COUNTER__ << 32)) \
-    ) \
+detail::splitmix64( \
+HASH(__FILE__) + \
+((std::uint64_t)__LINE__ * 0x9e3779b97f4a7c15ULL) + \
+(HASH(__TIME__) ^ ((std::uint64_t)__COUNTER__ << 32)) \
+) \
 )
 #endif
-
-template<std::size_t N>
-FORCEINLINE consteval std::uint64_t hash_compile_time(char const (&data)[N]) {
-    std::uint64_t hash = 0;
-
-    for (auto i = 0; i < N - 1; ++i) {
-        hash += data[i] >= 'A' && data[i] <= 'Z' ? data[i] + ('a' - 'A') : data[i];
-        hash += hash << 8;
-        hash ^= hash >> 11;
-    }
-
-    hash += hash << 5;
-    hash ^= hash >> 13;
-    hash += hash << 10;
-
-    return hash;
-}
-
-FORCEINLINE std::uint64_t hash_runtime(char const *str) {
-    std::size_t length = 0;
-    while (str[length])
-        ++length;
-
-    std::uint64_t hash = 0;
-
-    for (auto i = 0u; i < length; i++) {
-        hash += str[i] >= 'A' && str[i] <= 'Z' ? str[i] + ('a' - 'A') : str[i];
-        hash += hash << 8;
-        hash ^= hash >> 11;
-    }
-
-    hash += hash << 5;
-    hash ^= hash >> 13;
-    hash += hash << 10;
-
-    return hash;
-}
-
-#define HASH( s ) hash_compile_time( s )
-#define HASH_RT( s ) hash_runtime( s )
-
-constexpr std::uint64_t rol64(std::uint64_t x, int n) {
-    n &= 63;
-    if (n == 0) return x;
-    return (x << n) | (x >> (64 - n));
-}
-
-constexpr std::uint64_t ror64(std::uint64_t x, int n) {
-    n &= 63;
-    if (n == 0) return x;
-    return (x >> n) | (x << (64 - n));
-}
 
 enum class obf_level : std::uint8_t { Low, Medium, High };
 
@@ -142,13 +147,13 @@ class obfuscxx {
     static constexpr std::uint64_t seed{Entropy};
     static constexpr std::uint64_t iv[8] = {
         0xcbf43b227a01fe5aULL ^ seed,
-        0x32703be7aaa7c38fULL ^ ror64(seed, 13),
-        0xb589959b3d854bbcULL ^ rol64(seed, 29),
-        0x73b3ef5578a97c8aULL ^ ror64(seed, 41),
-        0x92afafd27c6e16e9ULL ^ rol64(seed, 7),
-        0xee8291ae3070720aULL ^ ror64(seed, 53),
-        0xe2c0d70f73d6c4a0ULL ^ rol64(seed, 19),
-        0x82742897b912855bULL ^ ror64(seed, 37),
+        0x32703be7aaa7c38fULL ^ detail::ror64(seed, 13),
+        0xb589959b3d854bbcULL ^ detail::rol64(seed, 29),
+        0x73b3ef5578a97c8aULL ^ detail::ror64(seed, 41),
+        0x92afafd27c6e16e9ULL ^ detail::rol64(seed, 7),
+        0xee8291ae3070720aULL ^ detail::ror64(seed, 53),
+        0xe2c0d70f73d6c4a0ULL ^ detail::rol64(seed, 19),
+        0x82742897b912855bULL ^ detail::ror64(seed, 37),
     };
     static constexpr std::uint64_t iv_size = (sizeof(iv) / 8) - 1;
     static constexpr std::uint64_t unique_index = seed & iv_size;
@@ -612,3 +617,5 @@ constexpr auto operator""_obf() {
 
 #define obfusv(val) obfuscxx(val).get()
 #define obfuss(str) obfuscxx(str).to_string().c_str()
+
+#endif // NGU_OBFUSCXX_H
