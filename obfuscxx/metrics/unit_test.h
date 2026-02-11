@@ -4,6 +4,8 @@
 
 #include "include/obfuscxx.h"
 
+using namespace ngu;
+
 TEST(ObfuscxxTest, IntegerValue) {
     obfuscxx<int> value{ 100 };
     EXPECT_EQ(value.get(), 100);

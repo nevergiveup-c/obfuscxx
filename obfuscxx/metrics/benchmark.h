@@ -3,6 +3,8 @@
 
 #include "include/obfuscxx.h"
 
+using namespace ngu;
+
 static void BM_IntegerGet_Low(benchmark::State& state) {
     obfuscxx<int, 1, obf_level::Low> int_value{ 42 };
     for (auto _ : state) {
